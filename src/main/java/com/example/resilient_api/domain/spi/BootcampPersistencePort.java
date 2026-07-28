@@ -9,4 +9,7 @@ public interface BootcampPersistencePort {
     Mono<Bootcamp> save(Bootcamp bootcamp);
     Mono<Boolean> existsByName(String name);
     Mono<BootcampPageResult> listBootcamps(BootcampListCriteria criteria);
+    Mono<Boolean> existsById(Long bootcampId);
+    Mono<java.util.List<Long>> findExclusiveCapabilityIdsByBootcampId(Long bootcampId);
+    Mono<Void> deleteBootcampById(Long bootcampId);
 }

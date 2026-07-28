@@ -57,6 +57,13 @@ public class BootcampPersistenceAdapter implements BootcampPersistencePort {
     }
 
     @Override
+    public Mono<Boolean> existsById(Long bootcampId) {
+        return bootcampRepository.findById(bootcampId)
+                .map(bootcamp -> true)
+                .defaultIfEmpty(false);
+    }
+
+    @Override
     public Mono<BootcampPageResult> listBootcamps(BootcampListCriteria criteria) {
         int page = criteria.page() == null || criteria.page() < 0 ? 0 : criteria.page();
         int size = criteria.size() == null || criteria.size() <= 0 ? 10 : criteria.size();
@@ -155,6 +162,19 @@ public class BootcampPersistenceAdapter implements BootcampPersistencePort {
         }
 
         return (int) Math.ceil((double) totalElements / size);
+    }
+
+    @Override
+    public Mono<List<Long>> findExclusiveCapabilityIdsByBootcampId(Long bootcampId) {
+        return bootcampCapabilityRepository.findExclusiveCapabilityIdsByBootcampId(bootcampId)
+                .collectList();
+    }
+
+    @Override
+    public Mono<Void> deleteBootcampById(Long bootcampId) {
+        return bootcampCapabilityRepository.deleteByBootcampId(bootcampId)
+                .then(bootcampRepository.deleteById(bootcampId))
+                .as(transactionalOperator::transactional);
     }
 
     private Mono<Void> validateCapabilitiesAreNotAssigned(List<Long> capabilityIds) {

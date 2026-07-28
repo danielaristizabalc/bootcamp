@@ -8,6 +8,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
+import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
@@ -18,6 +19,7 @@ public class RouterRest {
                                                           BootcampHandlerImpl bootcampHandler) {
         return route(POST("/user"), userHandler::createUser)
                 .andRoute(POST("/bootcamp"), bootcampHandler::createBootcamp)
-                .andRoute(GET("/bootcamp"), bootcampHandler::listBootcamps);
+            .andRoute(GET("/bootcamp"), bootcampHandler::listBootcamps)
+            .andRoute(DELETE("/bootcamp/{id}"), bootcampHandler::deleteBootcamp);
     }
 }

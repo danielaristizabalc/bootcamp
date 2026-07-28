@@ -15,6 +15,15 @@ public interface BootcampCapabilityRepository extends R2dbcRepository<BootcampCa
     Flux<BootcampCapabilityEntity> findByBootcampId(Long bootcampId);
 
     @Query("""
+            SELECT capability_id
+            FROM bootcamp_capabilities
+            WHERE bootcamp_id = :bootcampId
+            GROUP BY capability_id
+            HAVING COUNT(*) = 1
+            """)
+    Flux<Long> findExclusiveCapabilityIdsByBootcampId(@Param("bootcampId") Long bootcampId);
+
+    @Query("""
             SELECT DISTINCT capability_id
             FROM bootcamp_capabilities
             WHERE capability_id IN (:capabilityIds)

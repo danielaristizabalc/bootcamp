@@ -15,4 +15,6 @@ public interface CapabilityGateway {
     Mono<List<Long>> validateCapabilities(List<Long> capabilityIds, String messageId);
 
     Mono<List<Capability>> findCapabilitiesByIds(List<Long> capabilityIds, String messageId);
+
+    Mono<Void> deleteCapabilitiesByIds(List<Long> capabilityIds, String messageId);
 }

@@ -96,6 +96,17 @@ public class CapabilityAdapter implements CapabilityGateway {
         );
     }
 
+    @Override
+    public Mono<Void> deleteCapabilitiesByIds(List<Long> capabilityIds, String messageId) {
+        if (capabilityIds == null || capabilityIds.isEmpty()) {
+            log.info("No capabilities to delete for messageId: {}", messageId);
+            return Mono.empty();
+        }
+
+        log.info("Simulating capability deletion for ids: {} with messageId: {}", capabilityIds, messageId);
+        return Mono.empty();
+    }
+
     public Mono<List<Long>> fallback(Throwable t) {
         log.error("Fallback triggered for capability service", t);
         return Mono.error(new TechnicalException(TechnicalMessage.CAPABILITY_SERVICE_UNAVAILABLE));

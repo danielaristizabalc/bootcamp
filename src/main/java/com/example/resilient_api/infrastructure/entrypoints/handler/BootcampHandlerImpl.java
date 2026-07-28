@@ -1,6 +1,7 @@
 package com.example.resilient_api.infrastructure.entrypoints.handler;
 
 import com.example.resilient_api.domain.api.BootcampListServicePort;
+import com.example.resilient_api.domain.api.BootcampDeleteServicePort;
 import com.example.resilient_api.domain.api.BootcampServicePort;
 import com.example.resilient_api.domain.enums.TechnicalMessage;
 import com.example.resilient_api.domain.exceptions.BusinessException;
@@ -31,6 +32,7 @@ public class BootcampHandlerImpl {
 
     private final BootcampServicePort bootcampServicePort;
     private final BootcampListServicePort bootcampListServicePort;
+    private final BootcampDeleteServicePort bootcampDeleteServicePort;
     private final BootcampMapper bootcampMapper;
 
     public Mono<ServerResponse> createBootcamp(ServerRequest request) {
@@ -113,6 +115,47 @@ public class BootcampHandlerImpl {
                             .build())));
                 }
 
+                public Mono<ServerResponse> deleteBootcamp(ServerRequest request) {
+                String messageId = getMessageId(request);
+
+                return Mono.fromSupplier(() -> Long.valueOf(request.pathVariable("id")))
+                    .flatMap(bootcampId -> bootcampDeleteServicePort.deleteBootcamp(bootcampId, messageId)
+                        .then(ServerResponse.ok().bodyValue(buildDeleteSuccessResponse(messageId))))
+                    .onErrorResume(NumberFormatException.class, ex -> buildErrorResponse(
+                        HttpStatus.BAD_REQUEST,
+                        messageId,
+                        TechnicalMessage.INVALID_PARAMETERS,
+                        List.of(ErrorDTO.builder()
+                            .code(TechnicalMessage.INVALID_PARAMETERS.getCode())
+                            .message(TechnicalMessage.INVALID_PARAMETERS.getMessage())
+                            .build())))
+                    .onErrorResume(BusinessException.class, ex -> buildErrorResponse(
+                        HttpStatus.BAD_REQUEST,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                            .code(ex.getTechnicalMessage().getCode())
+                            .message(ex.getTechnicalMessage().getMessage())
+                            .param(ex.getTechnicalMessage().getParam())
+                            .build())))
+                    .onErrorResume(TechnicalException.class, ex -> buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                            .code(ex.getTechnicalMessage().getCode())
+                            .message(ex.getTechnicalMessage().getMessage())
+                            .build())))
+                    .onErrorResume(ex -> buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        messageId,
+                        TechnicalMessage.INTERNAL_ERROR,
+                        List.of(ErrorDTO.builder()
+                            .code(TechnicalMessage.INTERNAL_ERROR.getCode())
+                            .message(TechnicalMessage.INTERNAL_ERROR.getMessage())
+                            .build())));
+                }
+
     private APIResponse buildSuccessResponse(com.example.resilient_api.domain.model.Bootcamp bootcamp, 
                                                String messageId) {
         return APIResponse.builder()
@@ -131,6 +174,15 @@ public class BootcampHandlerImpl {
                 .identifier(messageId)
                 .date(Instant.now().toString())
                 .data(page)
+                .build();
+    }
+
+    private APIResponse buildDeleteSuccessResponse(String messageId) {
+        return APIResponse.builder()
+                .code(TechnicalMessage.BOOTCAMP_DELETED.getCode())
+                .message(TechnicalMessage.BOOTCAMP_DELETED.getMessage())
+                .identifier(messageId)
+                .date(Instant.now().toString())
                 .build();
     }
 
