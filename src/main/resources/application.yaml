@@ -1,0 +1,90 @@
+management:
+  tracing:
+    sampling:
+      probability: 0.0
+    baggage:
+      correlation:
+        fields:
+          - messageId
+          - x-message-id
+      remote-fields: messageId,x-message-id
+  endpoints:
+    web:
+      exposure:
+        include: health, metrics, loggers
+      base-path: /
+      path-mapping:
+        health: actuator/health
+        metrics: actuator/metrics
+        loggers: resilient-api/actuator/loggers
+  endpoint:
+    health:
+      probes:
+        enabled: false
+      show-details: "always"
+  health:
+    circuitbreakers:
+      enabled: true
+    diskspace:
+      enabled: false
+    r2dbc:
+      enabled: true
+    ping:
+      enabled: false
+    refresh:
+      enabled: false
+email-validator:
+  base-url: "${EMAIL_VALIDATOR_BASE_URL:https://emailvalidation.abstractapi.com/v1/}"
+  api-key: "${EMAIL_VALIDATOR_API_KEY:3b1d9eb55cfe489dae5ab293b4234e0d}"
+  timeout: "${EMAIL_VALIDATOR_TIMEOUT:500}"
+resilience4j.circuitbreaker:
+  circuit-breaker-aspect-order: 1
+  configs:
+    default:
+      register-health-indicator: true
+  instances:
+    emailValidator:
+      base-config: default
+      failure-rate-threshold: 50
+      slow-call-rate-threshold: 50
+      slow-call-duration-threshold: 2s
+      sliding-window-size: 5
+      minimum-number-of-calls: 5
+      wait-duration-in-open-state: 25s
+      max-wait-duration-in-half-open-state: 5s
+      permitted-number-of-calls-in-half-open-state: 2
+      automatic-transition-from-open-to-half-open-enabled: false
+      record-exceptions: java.util.concurrent.TimeoutException
+      ignore-exceptions: com.example.resilient_api.domain.exceptions.BusinessException
+resilience4j:
+  retry:
+    configs:
+      default:
+        maxAttempts: 3
+        waitDuration: 2000ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2.0
+        maxWaitDuration: 10000ms  # Duración máxima del backoff
+        initialInterval: 500ms    # Intervalo inicial para el backoff
+    instances:
+      emailValidatorRetry:
+        maxAttempts: 5
+        waitDuration: 1000ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 1.5
+        maxWaitDuration: 10000ms  # Duración máxima del backoff
+        initialInterval: 500ms    # Intervalo inicial para el backoff
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: 10
+        maxWaitDuration: 500ms
+    instances:
+      emailValidatorBulkhead:
+        maxConcurrentCalls: 5
+        maxWaitDuration: 1s
+
+# Configuración del microservicio de capacidades
+capability-service:
+  base-url: "${CAPABILITY_SERVICE_BASE_URL:http://localhost:8081}"
+  timeout: "${CAPABILITY_SERVICE_TIMEOUT:5000}"
