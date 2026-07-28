@@ -1,10 +1,13 @@
 package com.example.resilient_api.infrastructure.entrypoints.handler;
 
+import com.example.resilient_api.domain.api.BootcampListServicePort;
 import com.example.resilient_api.domain.api.BootcampServicePort;
 import com.example.resilient_api.domain.enums.TechnicalMessage;
 import com.example.resilient_api.domain.exceptions.BusinessException;
 import com.example.resilient_api.domain.exceptions.TechnicalException;
+import com.example.resilient_api.domain.model.BootcampListCriteria;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampPageDTO;
 import com.example.resilient_api.infrastructure.entrypoints.mapper.BootcampMapper;
 import com.example.resilient_api.infrastructure.entrypoints.util.APIResponse;
 import com.example.resilient_api.infrastructure.entrypoints.util.ErrorDTO;
@@ -27,6 +30,7 @@ import static com.example.resilient_api.infrastructure.entrypoints.util.Constant
 public class BootcampHandlerImpl {
 
     private final BootcampServicePort bootcampServicePort;
+    private final BootcampListServicePort bootcampListServicePort;
     private final BootcampMapper bootcampMapper;
 
     public Mono<ServerResponse> createBootcamp(ServerRequest request) {
@@ -82,6 +86,33 @@ public class BootcampHandlerImpl {
                 });
     }
 
+                public Mono<ServerResponse> listBootcamps(ServerRequest request) {
+                String messageId = getMessageId(request);
+
+                return Mono.fromSupplier(() -> buildCriteria(request))
+                    .flatMap(criteria -> bootcampListServicePort.listBootcamps(criteria, messageId))
+                    .map(bootcampMapper::bootcampListResultToBootcampPageDTO)
+                    .flatMap(page -> ServerResponse.ok().bodyValue(buildListSuccessResponse(page, messageId)))
+                    .doOnError(ex -> log.error("Error listing bootcamps for messageId: {}", messageId, ex))
+                    .onErrorResume(BusinessException.class, ex -> buildErrorResponse(
+                        HttpStatus.BAD_REQUEST,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                            .code(ex.getTechnicalMessage().getCode())
+                            .message(ex.getTechnicalMessage().getMessage())
+                            .param(ex.getTechnicalMessage().getParam())
+                            .build())))
+                    .onErrorResume(ex -> buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        messageId,
+                        TechnicalMessage.INTERNAL_ERROR,
+                        List.of(ErrorDTO.builder()
+                            .code(TechnicalMessage.INTERNAL_ERROR.getCode())
+                            .message(TechnicalMessage.INTERNAL_ERROR.getMessage())
+                            .build())));
+                }
+
     private APIResponse buildSuccessResponse(com.example.resilient_api.domain.model.Bootcamp bootcamp, 
                                                String messageId) {
         return APIResponse.builder()
@@ -91,6 +122,28 @@ public class BootcampHandlerImpl {
                 .date(Instant.now().toString())
                 .data(bootcampMapper.bootcampToBootcampDTO(bootcamp))
                 .build();
+    }
+
+    private APIResponse buildListSuccessResponse(BootcampPageDTO page, String messageId) {
+        return APIResponse.builder()
+                .code(TechnicalMessage.BOOTCAMP_LISTED.getCode())
+                .message(TechnicalMessage.BOOTCAMP_LISTED.getMessage())
+                .identifier(messageId)
+                .date(Instant.now().toString())
+                .data(page)
+                .build();
+    }
+
+    private BootcampListCriteria buildCriteria(ServerRequest request) {
+        try {
+            int page = request.queryParam("page").map(Integer::parseInt).orElse(0);
+            int size = request.queryParam("size").map(Integer::parseInt).orElse(10);
+            String sortBy = request.queryParam("sortBy").orElse("name");
+            String sortDirection = request.queryParam("sortDirection").orElse("asc");
+            return new BootcampListCriteria(page, size, sortBy, sortDirection);
+        } catch (NumberFormatException ex) {
+            throw new BusinessException(TechnicalMessage.INVALID_PARAMETERS);
+        }
     }
 
     private Mono<ServerResponse> buildErrorResponse(HttpStatus httpStatus, 

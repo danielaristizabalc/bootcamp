@@ -1,7 +1,15 @@
 package com.example.resilient_api.infrastructure.entrypoints.mapper;
 
+import com.example.resilient_api.domain.model.BootcampListItem;
+import com.example.resilient_api.domain.model.BootcampListResult;
+import com.example.resilient_api.domain.model.Capability;
+import com.example.resilient_api.domain.model.Technology;
 import com.example.resilient_api.domain.model.Bootcamp;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampListItemDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampPageDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.CapabilityListDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.TechnologyDTO;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -23,4 +31,40 @@ public interface BootcampMapper {
     @Mapping(source = "duration", target = "duration")
     @Mapping(source = "capabilityIds", target = "capabilityIds")
     BootcampDTO bootcampToBootcampDTO(Bootcamp bootcamp);
+
+    default BootcampPageDTO bootcampListResultToBootcampPageDTO(BootcampListResult page) {
+        return BootcampPageDTO.builder()
+                .content(page.content().stream().map(this::bootcampListItemToDto).toList())
+                .page(page.page())
+                .size(page.size())
+                .totalElements(page.totalElements())
+                .totalPages(page.totalPages())
+                .build();
+    }
+
+    default BootcampListItemDTO bootcampListItemToDto(BootcampListItem bootcamp) {
+        return BootcampListItemDTO.builder()
+                .id(bootcamp.id())
+                .name(bootcamp.name())
+                .description(bootcamp.description())
+                .releaseDate(bootcamp.releaseDate())
+                .duration(bootcamp.duration())
+                .capabilities(bootcamp.capabilities().stream().map(this::capabilityToDto).toList())
+                .build();
+    }
+
+    default CapabilityListDTO capabilityToDto(Capability capability) {
+        return CapabilityListDTO.builder()
+                .id(capability.id())
+                .nombre(capability.name())
+                .tecnologias(capability.technologies().stream().map(this::technologyToDto).toList())
+                .build();
+    }
+
+    default TechnologyDTO technologyToDto(Technology technology) {
+        return TechnologyDTO.builder()
+                .id(technology.id())
+                .name(technology.name())
+                .build();
+    }
 }

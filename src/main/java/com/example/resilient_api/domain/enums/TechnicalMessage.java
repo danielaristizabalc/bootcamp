@@ -19,6 +19,7 @@ public enum TechnicalMessage {
     ADAPTER_RESPONSE_NOT_FOUND("404-0", "invalid email, please verify", ""),
     USER_ALREADY_EXISTS("400","El usuario ya está registrado." ,"" ),
     BOOTCAMP_CREATED("201", "Bootcamp creado exitosamente", ""),
+    BOOTCAMP_LISTED("200", "Bootcamps listados exitosamente", ""),
     BOOTCAMP_ALREADY_EXISTS("400", "El bootcamp ya está registrado", ""),
     INVALID_CAPABILITIES_COUNT("400", "Un bootcamp debe tener entre 1 y 4 capacidades", Constants.CAPABILITIES_PARAM),
     CAPABILITIES_ALREADY_ASSIGNED("400", "Algunas capacidades ya están asociadas a otro bootcamp", Constants.CAPABILITIES_PARAM),
