@@ -21,6 +21,7 @@ public enum TechnicalMessage {
     BOOTCAMP_CREATED("201", "Bootcamp creado exitosamente", ""),
     BOOTCAMP_LISTED("200", "Bootcamps listados exitosamente", ""),
     BOOTCAMP_DELETED("200", "Bootcamp eliminado exitosamente", ""),
+    BOOTCAMP_VALIDATED("200", "Bootcamps validados exitosamente", ""),
     BOOTCAMP_ALREADY_EXISTS("400", "El bootcamp ya está registrado", ""),
     BOOTCAMP_NOT_FOUND("404", "El bootcamp no existe", ""),
     INVALID_CAPABILITIES_COUNT("400", "Un bootcamp debe tener entre 1 y 4 capacidades", Constants.CAPABILITIES_PARAM),

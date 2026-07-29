@@ -2,13 +2,16 @@ package com.example.resilient_api.infrastructure.entrypoints.handler;
 
 import com.example.resilient_api.domain.api.BootcampListServicePort;
 import com.example.resilient_api.domain.api.BootcampDeleteServicePort;
+import com.example.resilient_api.domain.api.BootcampValidateServicePort;
 import com.example.resilient_api.domain.api.BootcampServicePort;
 import com.example.resilient_api.domain.enums.TechnicalMessage;
 import com.example.resilient_api.domain.exceptions.BusinessException;
 import com.example.resilient_api.domain.exceptions.TechnicalException;
 import com.example.resilient_api.domain.model.BootcampListCriteria;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampIdsRequestDTO;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampPageDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampValidationResponseDTO;
 import com.example.resilient_api.infrastructure.entrypoints.mapper.BootcampMapper;
 import com.example.resilient_api.infrastructure.entrypoints.util.APIResponse;
 import com.example.resilient_api.infrastructure.entrypoints.util.ErrorDTO;
@@ -33,6 +36,7 @@ public class BootcampHandlerImpl {
     private final BootcampServicePort bootcampServicePort;
     private final BootcampListServicePort bootcampListServicePort;
     private final BootcampDeleteServicePort bootcampDeleteServicePort;
+    private final BootcampValidateServicePort bootcampValidateServicePort;
     private final BootcampMapper bootcampMapper;
 
     public Mono<ServerResponse> createBootcamp(ServerRequest request) {
@@ -156,6 +160,47 @@ public class BootcampHandlerImpl {
                             .build())));
                 }
 
+                public Mono<ServerResponse> validateBootcamps(ServerRequest request) {
+                String messageId = getMessageId(request);
+
+                return request.bodyToMono(BootcampIdsRequestDTO.class)
+                    .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage.INVALID_REQUEST)))
+                    .flatMap(body -> {
+                        if (body.getIdBootcamps() == null || body.getIdBootcamps().isEmpty()) {
+                        return Mono.error(new BusinessException(TechnicalMessage.INVALID_REQUEST));
+                        }
+                        return bootcampValidateServicePort.validateBootcamps(body.getIdBootcamps(), messageId);
+                    })
+                    .map(bootcampMapper::bootcampValidationResultToDto)
+                    .flatMap(result -> ServerResponse.ok().bodyValue(buildValidateSuccessResponse(result, messageId)))
+                    .doOnError(ex -> log.error("Error validating bootcamps for messageId: {}", messageId, ex))
+                    .onErrorResume(BusinessException.class, ex -> buildErrorResponse(
+                        HttpStatus.BAD_REQUEST,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                            .code(ex.getTechnicalMessage().getCode())
+                            .message(ex.getTechnicalMessage().getMessage())
+                            .param(ex.getTechnicalMessage().getParam())
+                            .build())))
+                    .onErrorResume(TechnicalException.class, ex -> buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        messageId,
+                        ex.getTechnicalMessage(),
+                        List.of(ErrorDTO.builder()
+                            .code(ex.getTechnicalMessage().getCode())
+                            .message(ex.getTechnicalMessage().getMessage())
+                            .build())))
+                    .onErrorResume(ex -> buildErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR,
+                        messageId,
+                        TechnicalMessage.INTERNAL_ERROR,
+                        List.of(ErrorDTO.builder()
+                            .code(TechnicalMessage.INTERNAL_ERROR.getCode())
+                            .message(TechnicalMessage.INTERNAL_ERROR.getMessage())
+                            .build())));
+                }
+
     private APIResponse buildSuccessResponse(com.example.resilient_api.domain.model.Bootcamp bootcamp, 
                                                String messageId) {
         return APIResponse.builder()
@@ -183,6 +228,16 @@ public class BootcampHandlerImpl {
                 .message(TechnicalMessage.BOOTCAMP_DELETED.getMessage())
                 .identifier(messageId)
                 .date(Instant.now().toString())
+                .build();
+    }
+
+    private APIResponse buildValidateSuccessResponse(BootcampValidationResponseDTO response, String messageId) {
+        return APIResponse.builder()
+                .code(TechnicalMessage.BOOTCAMP_VALIDATED.getCode())
+                .message(TechnicalMessage.BOOTCAMP_VALIDATED.getMessage())
+                .identifier(messageId)
+                .date(Instant.now().toString())
+                .data(response)
                 .build();
     }
 

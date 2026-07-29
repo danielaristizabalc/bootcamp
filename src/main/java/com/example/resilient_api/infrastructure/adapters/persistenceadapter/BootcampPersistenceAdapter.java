@@ -3,6 +3,7 @@ package com.example.resilient_api.infrastructure.adapters.persistenceadapter;
 import com.example.resilient_api.domain.enums.TechnicalMessage;
 import com.example.resilient_api.domain.exceptions.BusinessException;
 import com.example.resilient_api.domain.model.BootcampListCriteria;
+import com.example.resilient_api.domain.model.BootcampBasicInfo;
 import com.example.resilient_api.domain.model.BootcampPageResult;
 import com.example.resilient_api.domain.model.BootcampSummary;
 import com.example.resilient_api.domain.model.Bootcamp;
@@ -175,6 +176,14 @@ public class BootcampPersistenceAdapter implements BootcampPersistencePort {
         return bootcampCapabilityRepository.deleteByBootcampId(bootcampId)
                 .then(bootcampRepository.deleteById(bootcampId))
                 .as(transactionalOperator::transactional);
+    }
+
+    @Override
+    public Mono<List<BootcampBasicInfo>> findBootcampsByIds(List<Long> bootcampIds) {
+        return bootcampRepository.findAllById(bootcampIds)
+                .map(bootcamp -> new BootcampBasicInfo(
+                        bootcamp.getId(), bootcamp.getName(), bootcamp.getReleaseDate(),bootcamp.getDuration()))
+                .collectList();
     }
 
     private Mono<Void> validateCapabilitiesAreNotAssigned(List<Long> capabilityIds) {

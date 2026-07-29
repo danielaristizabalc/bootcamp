@@ -3,6 +3,7 @@ package com.example.resilient_api.application.config;
 import com.example.resilient_api.domain.api.BootcampServicePort;
 import com.example.resilient_api.domain.api.BootcampListServicePort;
 import com.example.resilient_api.domain.api.BootcampDeleteServicePort;
+import com.example.resilient_api.domain.api.BootcampValidateServicePort;
 import com.example.resilient_api.domain.api.UserServicePort;
 import com.example.resilient_api.domain.spi.BootcampPersistencePort;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
@@ -11,6 +12,7 @@ import com.example.resilient_api.domain.spi.UserPersistencePort;
 import com.example.resilient_api.domain.usecase.BootcampUseCase;
 import com.example.resilient_api.domain.usecase.BootcampDeleteUseCase;
 import com.example.resilient_api.domain.usecase.BootcampListUseCase;
+import com.example.resilient_api.domain.usecase.BootcampValidateUseCase;
 import com.example.resilient_api.domain.usecase.UserUseCase;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.BootcampPersistenceAdapter;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.UserPersistenceAdapter;
@@ -73,5 +75,10 @@ public class UseCasesConfig {
         public BootcampDeleteServicePort bootcampDeleteServicePort(BootcampPersistencePort bootcampPersistencePort,
                                                                    CapabilityGateway capabilityGateway) {
                 return new BootcampDeleteUseCase(bootcampPersistencePort, capabilityGateway);
+        }
+
+        @Bean
+        public BootcampValidateServicePort bootcampValidateServicePort(BootcampPersistencePort bootcampPersistencePort) {
+                return new BootcampValidateUseCase(bootcampPersistencePort);
         }
 }

@@ -19,6 +19,7 @@ public class RouterRest {
                                                           BootcampHandlerImpl bootcampHandler) {
         return route(POST("/user"), userHandler::createUser)
                 .andRoute(POST("/bootcamp"), bootcampHandler::createBootcamp)
+            .andRoute(POST("/bootcamp/validate"), bootcampHandler::validateBootcamps)
             .andRoute(GET("/bootcamp"), bootcampHandler::listBootcamps)
             .andRoute(DELETE("/bootcamp/{id}"), bootcampHandler::deleteBootcamp);
     }

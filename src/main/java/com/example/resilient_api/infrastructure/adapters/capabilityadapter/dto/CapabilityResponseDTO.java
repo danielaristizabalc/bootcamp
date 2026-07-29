@@ -29,7 +29,7 @@ public class CapabilityResponseDTO {
         private String nombre;
         @JsonProperty("descripcion")
         private String descripcion;
-        @JsonProperty("cantidadTecnologias")
+        @JsonProperty("cantidadTecnologias")    
         private Integer cantidadTecnologias;
         private List<TecnologiaDTO> tecnologias;
 

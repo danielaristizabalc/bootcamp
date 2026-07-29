@@ -2,12 +2,16 @@ package com.example.resilient_api.infrastructure.entrypoints.mapper;
 
 import com.example.resilient_api.domain.model.BootcampListItem;
 import com.example.resilient_api.domain.model.BootcampListResult;
+import com.example.resilient_api.domain.model.BootcampBasicInfo;
+import com.example.resilient_api.domain.model.BootcampValidationResult;
 import com.example.resilient_api.domain.model.Capability;
 import com.example.resilient_api.domain.model.Technology;
 import com.example.resilient_api.domain.model.Bootcamp;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampBasicInfoDTO;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampListItemDTO;
 import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampPageDTO;
+import com.example.resilient_api.infrastructure.entrypoints.dto.BootcampValidationResponseDTO;
 import com.example.resilient_api.infrastructure.entrypoints.dto.CapabilityListDTO;
 import com.example.resilient_api.infrastructure.entrypoints.dto.TechnologyDTO;
 import org.mapstruct.Mapper;
@@ -65,6 +69,21 @@ public interface BootcampMapper {
         return TechnologyDTO.builder()
                 .id(technology.id())
                 .name(technology.name())
+                .build();
+    }
+
+    default BootcampValidationResponseDTO bootcampValidationResultToDto(BootcampValidationResult result) {
+        return BootcampValidationResponseDTO.builder()
+                .bootcamps(result.bootcamps().stream().map(this::bootcampBasicInfoToDto).toList())
+                .build();
+    }
+
+    default BootcampBasicInfoDTO bootcampBasicInfoToDto(BootcampBasicInfo bootcamp) {
+        return BootcampBasicInfoDTO.builder()
+                .id(bootcamp.id())
+                .name(bootcamp.name())
+                .releaseDate(bootcamp.releaseDate())
+                .duration(bootcamp.duration())
                 .build();
     }
 }
