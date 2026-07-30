@@ -8,6 +8,7 @@ import com.example.resilient_api.domain.api.UserServicePort;
 import com.example.resilient_api.domain.spi.BootcampPersistencePort;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
 import com.example.resilient_api.domain.spi.EmailValidatorGateway;
+import com.example.resilient_api.domain.spi.ReportGateway;
 import com.example.resilient_api.domain.spi.UserPersistencePort;
 import com.example.resilient_api.domain.usecase.BootcampUseCase;
 import com.example.resilient_api.domain.usecase.BootcampDeleteUseCase;
@@ -61,8 +62,9 @@ public class UseCasesConfig {
 
         @Bean
         public BootcampServicePort bootcampServicePort(BootcampPersistencePort bootcampPersistencePort,
-                                                        CapabilityGateway capabilityGateway) {
-                return new BootcampUseCase(bootcampPersistencePort, capabilityGateway);
+                                                        CapabilityGateway capabilityGateway,
+                                                        ReportGateway reportGateway) {
+                return new BootcampUseCase(bootcampPersistencePort, capabilityGateway, reportGateway);
         }
 
         @Bean

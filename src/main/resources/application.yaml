@@ -88,3 +88,7 @@ resilience4j:
 capability-service:
   base-url: "${CAPABILITY_SERVICE_BASE_URL:http://localhost:8081}"
   timeout: "${CAPABILITY_SERVICE_TIMEOUT:5000}"
+
+report-service:
+  base-url: "${REPORT_SERVICE_BASE_URL:http://localhost:8084}"
+  timeout: "${REPORT_SERVICE_TIMEOUT:5000}"

@@ -27,7 +27,8 @@ public enum TechnicalMessage {
     INVALID_CAPABILITIES_COUNT("400", "Un bootcamp debe tener entre 1 y 4 capacidades", Constants.CAPABILITIES_PARAM),
     CAPABILITIES_ALREADY_ASSIGNED("400", "Algunas capacidades ya están asociadas a otro bootcamp", Constants.CAPABILITIES_PARAM),
     CAPABILITIES_NOT_FOUND("400", "Algunas capacidades no existen", Constants.CAPABILITIES_PARAM),
-    CAPABILITY_SERVICE_UNAVAILABLE("503", "Servicio de capacidades no disponible", "");
+    CAPABILITY_SERVICE_UNAVAILABLE("503", "Servicio de capacidades no disponible", ""),
+    REPORT_SERVICE_UNAVAILABLE("503", "Servicio de reportes no disponible", "");
 
     private final String code;
     private final String message;
