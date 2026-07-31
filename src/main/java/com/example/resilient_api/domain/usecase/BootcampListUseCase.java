@@ -1,13 +1,8 @@
 package com.example.resilient_api.domain.usecase;
 
 import com.example.resilient_api.domain.api.BootcampListServicePort;
-import com.example.resilient_api.domain.model.BootcampListCriteria;
-import com.example.resilient_api.domain.model.BootcampListItem;
-import com.example.resilient_api.domain.model.BootcampListResult;
-import com.example.resilient_api.domain.model.BootcampPageResult;
-import com.example.resilient_api.domain.model.BootcampSummary;
-import com.example.resilient_api.domain.model.Capability;
-import com.example.resilient_api.domain.spi.BootcampPersistencePort;
+import com.example.resilient_api.domain.model.*;
+import com.example.resilient_api.domain.spi.BootcampListQueryPort;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
 import reactor.core.publisher.Mono;
 
@@ -19,18 +14,18 @@ import java.util.stream.Collectors;
 
 public class BootcampListUseCase implements BootcampListServicePort {
 
-    private final BootcampPersistencePort bootcampPersistencePort;
+    private final BootcampListQueryPort bootcampListQueryPort;
     private final CapabilityGateway capabilityGateway;
 
-    public BootcampListUseCase(BootcampPersistencePort bootcampPersistencePort,
+    public BootcampListUseCase(BootcampListQueryPort bootcampListQueryPort,
                                CapabilityGateway capabilityGateway) {
-        this.bootcampPersistencePort = bootcampPersistencePort;
+        this.bootcampListQueryPort = bootcampListQueryPort;
         this.capabilityGateway = capabilityGateway;
     }
 
     @Override
     public Mono<BootcampListResult> listBootcamps(BootcampListCriteria criteria, String messageId) {
-        return bootcampPersistencePort.listBootcamps(criteria)
+        return bootcampListQueryPort.listBootcamps(criteria)
                 .flatMap(page -> enrichPage(page, messageId));
     }
 

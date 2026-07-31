@@ -7,7 +7,7 @@ import com.example.resilient_api.domain.model.BootcampPageResult;
 import com.example.resilient_api.domain.model.BootcampSummary;
 import com.example.resilient_api.domain.model.Capability;
 import com.example.resilient_api.domain.model.Technology;
-import com.example.resilient_api.domain.spi.BootcampPersistencePort;
+import com.example.resilient_api.domain.spi.BootcampListQueryPort;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class BootcampListUseCaseTest {
     private static final BootcampListCriteria DEFAULT_CRITERIA = new BootcampListCriteria(0, 10, "name", "asc");
 
     @Mock
-    private BootcampPersistencePort bootcampPersistencePort;
+        private BootcampListQueryPort bootcampListQueryPort;
 
     @Mock
     private CapabilityGateway capabilityGateway;
@@ -45,7 +45,7 @@ class BootcampListUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        bootcampListUseCase = new BootcampListUseCase(bootcampPersistencePort, capabilityGateway);
+                bootcampListUseCase = new BootcampListUseCase(bootcampListQueryPort, capabilityGateway);
     }
 
     @Test
@@ -76,7 +76,7 @@ class BootcampListUseCaseTest {
         );
         BootcampPageResult pageResult = new BootcampPageResult(List.of(bootcampOne, bootcampTwo), 0, 10, 2L, 1);
 
-        when(bootcampPersistencePort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
+        when(bootcampListQueryPort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
         when(capabilityGateway.findCapabilitiesByIds(List.of(1L, 2L, 3L), MESSAGE_ID)).thenReturn(Mono.just(capabilities));
 
         // When
@@ -119,7 +119,7 @@ class BootcampListUseCaseTest {
                 })
                 .verifyComplete();
 
-        verify(bootcampPersistencePort).listBootcamps(DEFAULT_CRITERIA);
+        verify(bootcampListQueryPort).listBootcamps(DEFAULT_CRITERIA);
         verify(capabilityGateway).findCapabilitiesByIds(List.of(1L, 2L, 3L), MESSAGE_ID);
     }
 
@@ -137,7 +137,7 @@ class BootcampListUseCaseTest {
         );
         BootcampPageResult pageResult = new BootcampPageResult(List.of(bootcamp), 0, 10, 1L, 1);
 
-        when(bootcampPersistencePort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
+        when(bootcampListQueryPort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
 
         // When
         Mono<BootcampListResult> responseMono = bootcampListUseCase.listBootcamps(DEFAULT_CRITERIA, MESSAGE_ID);
@@ -154,7 +154,7 @@ class BootcampListUseCaseTest {
                 })
                 .verifyComplete();
 
-        verify(bootcampPersistencePort).listBootcamps(DEFAULT_CRITERIA);
+        verify(bootcampListQueryPort).listBootcamps(DEFAULT_CRITERIA);
         verifyNoInteractions(capabilityGateway);
     }
 
@@ -162,7 +162,7 @@ class BootcampListUseCaseTest {
     void debePropagarElErrorCuandoFallaLaConsultaDeBootcamps() {
         // Given
         RuntimeException unexpectedException = new RuntimeException("unexpected");
-        when(bootcampPersistencePort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.error(unexpectedException));
+        when(bootcampListQueryPort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.error(unexpectedException));
 
         // When
         Mono<BootcampListResult> responseMono = bootcampListUseCase.listBootcamps(DEFAULT_CRITERIA, MESSAGE_ID);
@@ -172,7 +172,7 @@ class BootcampListUseCaseTest {
                 .expectErrorSatisfies(error -> assertThat(error).isSameAs(unexpectedException))
                 .verify();
 
-        verify(bootcampPersistencePort).listBootcamps(DEFAULT_CRITERIA);
+        verify(bootcampListQueryPort).listBootcamps(DEFAULT_CRITERIA);
         verifyNoInteractions(capabilityGateway);
     }
 
@@ -191,7 +191,7 @@ class BootcampListUseCaseTest {
         BootcampPageResult pageResult = new BootcampPageResult(List.of(bootcamp), 0, 10, 1L, 1);
         RuntimeException unexpectedException = new RuntimeException("unexpected");
 
-        when(bootcampPersistencePort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
+        when(bootcampListQueryPort.listBootcamps(DEFAULT_CRITERIA)).thenReturn(Mono.just(pageResult));
         when(capabilityGateway.findCapabilitiesByIds(List.of(1L), MESSAGE_ID)).thenReturn(Mono.error(unexpectedException));
 
         // When
@@ -202,7 +202,7 @@ class BootcampListUseCaseTest {
                 .expectErrorSatisfies(error -> assertThat(error).isSameAs(unexpectedException))
                 .verify();
 
-        verify(bootcampPersistencePort).listBootcamps(DEFAULT_CRITERIA);
+        verify(bootcampListQueryPort).listBootcamps(DEFAULT_CRITERIA);
         verify(capabilityGateway).findCapabilitiesByIds(List.of(1L), MESSAGE_ID);
         verify(capabilityGateway, never()).deleteCapabilitiesByIds(List.of(1L), MESSAGE_ID);
     }

@@ -5,6 +5,7 @@ import com.example.resilient_api.domain.api.BootcampListServicePort;
 import com.example.resilient_api.domain.api.BootcampDeleteServicePort;
 import com.example.resilient_api.domain.api.BootcampValidateServicePort;
 import com.example.resilient_api.domain.api.UserServicePort;
+import com.example.resilient_api.domain.spi.BootcampListQueryPort;
 import com.example.resilient_api.domain.spi.BootcampPersistencePort;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
 import com.example.resilient_api.domain.spi.EmailValidatorGateway;
@@ -16,6 +17,8 @@ import com.example.resilient_api.domain.usecase.BootcampListUseCase;
 import com.example.resilient_api.domain.usecase.BootcampValidateUseCase;
 import com.example.resilient_api.domain.usecase.UserUseCase;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.BootcampPersistenceAdapter;
+import com.example.resilient_api.infrastructure.adapters.persistenceadapter.BootcampListQueryBuilder;
+import com.example.resilient_api.infrastructure.adapters.persistenceadapter.BootcampListQueryAdapter;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.UserPersistenceAdapter;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.mapper.BootcampEntityMapper;
 import com.example.resilient_api.infrastructure.adapters.persistenceadapter.mapper.UserEntityMapper;
@@ -55,8 +58,16 @@ public class UseCasesConfig {
                     bootcampRepository, 
                     bootcampCapabilityRepository, 
                     bootcampEntityMapper,
-                                        databaseClient,
                     transactionalOperator
+                );
+        }
+
+        @Bean
+        public BootcampListQueryPort bootcampListQueryPort() {
+                return new BootcampListQueryAdapter(
+                        databaseClient,
+                        bootcampCapabilityRepository,
+                        new BootcampListQueryBuilder()
                 );
         }
 
@@ -68,9 +79,9 @@ public class UseCasesConfig {
         }
 
         @Bean
-        public BootcampListServicePort bootcampListServicePort(BootcampPersistencePort bootcampPersistencePort,
+        public BootcampListServicePort bootcampListServicePort(BootcampListQueryPort bootcampListQueryPort,
                                                                CapabilityGateway capabilityGateway) {
-                return new BootcampListUseCase(bootcampPersistencePort, capabilityGateway);
+                return new BootcampListUseCase(bootcampListQueryPort, capabilityGateway);
         }
 
         @Bean
