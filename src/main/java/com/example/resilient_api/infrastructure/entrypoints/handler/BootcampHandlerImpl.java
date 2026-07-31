@@ -1,6 +1,6 @@
 package com.example.resilient_api.infrastructure.entrypoints.handler;
 
-import lombok.RequiredArgsConstructor;
+    import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
