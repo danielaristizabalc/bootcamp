@@ -25,9 +25,9 @@ public class BootcampDeleteUseCase implements BootcampDeleteServicePort {
         return bootcampPersistencePort.existsById(bootcampId)
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage.BOOTCAMP_NOT_FOUND)))
-                .then(bootcampPersistencePort.findExclusiveCapabilityIdsByBootcampId(bootcampId))
-                .flatMap(exclusiveCapabilityIds -> deleteCapabilitiesIfNeeded(exclusiveCapabilityIds, messageId)
-                        .then(bootcampPersistencePort.deleteBootcampById(bootcampId)))
+            .then(Mono.defer(() -> bootcampPersistencePort.findExclusiveCapabilityIdsByBootcampId(bootcampId)))
+            .flatMap(exclusiveCapabilityIds -> deleteCapabilitiesIfNeeded(exclusiveCapabilityIds, messageId)
+                .then(Mono.defer(() -> bootcampPersistencePort.deleteBootcampById(bootcampId))))
                 .then();
     }
 
