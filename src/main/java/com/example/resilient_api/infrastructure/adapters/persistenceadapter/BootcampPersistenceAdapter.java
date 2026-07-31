@@ -30,7 +30,7 @@ public class BootcampPersistenceAdapter implements BootcampPersistencePort {
     @Override
     public Mono<Bootcamp> save(Bootcamp bootcamp) {
         return validateCapabilitiesAreNotAssigned(bootcamp.capabilityIds())
-                .then(bootcampRepository.save(bootcampEntityMapper.toEntity(bootcamp)))
+                .then(Mono.defer(() -> bootcampRepository.save(bootcampEntityMapper.toEntity(bootcamp))))
                 .flatMap(savedBootcamp -> {
                     if (bootcamp.capabilityIds() != null && !bootcamp.capabilityIds().isEmpty()) {
                         return saveBootcampCapabilities(savedBootcamp.getId(), bootcamp.capabilityIds())
