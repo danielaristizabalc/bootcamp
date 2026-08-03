@@ -19,9 +19,6 @@ import static org.mockito.Mockito.when;
 class RouterRestTest {
 
     @Mock
-    private UserHandlerImpl userHandler;
-
-    @Mock
     private BootcampHandlerImpl bootcampHandler;
 
     private RouterRest routerRest;
@@ -30,7 +27,7 @@ class RouterRestTest {
     @BeforeEach
     void setUp() {
         routerRest = new RouterRest();
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(userHandler, bootcampHandler);
+            RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(bootcampHandler);
         webTestClient = WebTestClient.bindToRouterFunction(routerFunction).build();
         }
 
@@ -39,26 +36,10 @@ class RouterRestTest {
         // Given
 
         // When
-        RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(userHandler, bootcampHandler);
+            RouterFunction<ServerResponse> routerFunction = routerRest.routerFunction(bootcampHandler);
 
         // Then
         org.junit.jupiter.api.Assertions.assertNotNull(routerFunction);
-    }
-
-    @Test
-    void debeDelegarEnCreateUserCuandoLaRutaEsPostUser() {
-        // Given
-        when(userHandler.createUser(any())).thenReturn(ServerResponse.ok().build());
-
-        // When
-        webTestClient.post()
-                .uri("/user")
-                .bodyValue("{}")
-                .exchange()
-                .expectStatus().isOk();
-
-        // Then
-        verify(userHandler).createUser(any());
     }
 
     @Test
