@@ -6,14 +6,17 @@ import com.example.resilient_api.domain.exceptions.TechnicalException;
 import com.example.resilient_api.domain.model.Capability;
 import com.example.resilient_api.domain.model.Technology;
 import com.example.resilient_api.domain.spi.CapabilityGateway;
+import com.example.resilient_api.infrastructure.adapters.capabilityadapter.dto.DeleteCapabilityRequestDTO;
 import com.example.resilient_api.infrastructure.adapters.capabilityadapter.dto.CapabilityResponseDTO;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.ClientResponse;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
@@ -103,8 +106,20 @@ public class CapabilityAdapter implements CapabilityGateway {
             return Mono.empty();
         }
 
-        log.info("Simulating capability deletion for ids: {} with messageId: {}", capabilityIds, messageId);
-        return Mono.empty();
+        log.info("Deleting capabilities: {} with messageId: {}", capabilityIds, messageId);
+        DeleteCapabilityRequestDTO request = new DeleteCapabilityRequestDTO(capabilityIds);
+
+        return capabilityWebClient.method(HttpMethod.DELETE)
+            .uri("/ability")
+            .bodyValue(request)
+            .retrieve()
+            .onStatus(HttpStatusCode::is4xxClientError,
+                response -> buildErrorResponse(response, TechnicalMessage.INVALID_PARAMETERS))
+            .onStatus(HttpStatusCode::is5xxServerError,
+                response -> buildErrorResponse(response, TechnicalMessage.CAPABILITY_SERVICE_UNAVAILABLE))
+            .bodyToMono(String.class)
+            .doOnNext(response -> log.info("Capability service deletion response for messageId {}: {}", messageId, response))
+            .then();
     }
 
     public Mono<List<Long>> fallback(Throwable t) {
@@ -112,7 +127,7 @@ public class CapabilityAdapter implements CapabilityGateway {
         return Mono.error(new TechnicalException(TechnicalMessage.CAPABILITY_SERVICE_UNAVAILABLE));
     }
 
-    private Mono<Throwable> buildErrorResponse(org.springframework.web.reactive.function.client.ClientResponse response, 
+    private Mono<Throwable> buildErrorResponse(ClientResponse response,
                                                   TechnicalMessage technicalMessage) {
         return response.bodyToMono(String.class)
                 .defaultIfEmpty("No additional error details")

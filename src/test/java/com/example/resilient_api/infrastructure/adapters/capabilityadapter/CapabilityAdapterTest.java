@@ -6,12 +6,14 @@ import com.example.resilient_api.domain.exceptions.TechnicalException;
 import com.example.resilient_api.domain.model.Capability;
 import com.example.resilient_api.domain.model.Technology;
 import com.example.resilient_api.infrastructure.adapters.capabilityadapter.dto.CapabilityResponseDTO;
+import com.example.resilient_api.infrastructure.adapters.capabilityadapter.dto.DeleteCapabilityRequestDTO;
 import io.github.resilience4j.bulkhead.Bulkhead;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpMethod;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriBuilder;
 import reactor.core.publisher.Flux;
@@ -25,6 +27,7 @@ import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -36,6 +39,7 @@ class CapabilityAdapterTest {
     private static final String MESSAGE_ID = "message-id-123";
     private static final List<Long> REQUESTED_CAPABILITY_IDS = List.of(1L, 2L);
     private static final String SPRING_BOOT_NAME = "Spring Boot";
+    private static final String ABILITY_PATH = "/ability";
 
     @Mock
     private WebClient capabilityWebClient;
@@ -50,6 +54,14 @@ class CapabilityAdapterTest {
     @Mock
     @SuppressWarnings("rawtypes")
     private WebClient.RequestHeadersSpec requestHeadersSpec;
+
+    @Mock
+    @SuppressWarnings("rawtypes")
+    private WebClient.RequestBodyUriSpec requestBodyUriSpec;
+
+    @Mock
+    @SuppressWarnings("rawtypes")
+    private WebClient.RequestBodySpec requestBodySpec;
 
     @Mock
     private WebClient.ResponseSpec responseSpec;
@@ -154,6 +166,64 @@ class CapabilityAdapterTest {
                 .verifyComplete();
 
         verifyNoInteractions(capabilityWebClient, bulkhead);
+    }
+
+    @Test
+    void debeEliminarCapacidadesCuandoElServicioRespondeOk() {
+        // Given
+        when(capabilityWebClient.method(HttpMethod.DELETE)).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(ABILITY_PATH)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any(DeleteCapabilityRequestDTO.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class)).thenReturn(Mono.just("Registros eliminados exitosamente"));
+
+        // When
+        Mono<Void> responseMono = capabilityAdapter.deleteCapabilitiesByIds(REQUESTED_CAPABILITY_IDS, MESSAGE_ID);
+
+        // Then
+        StepVerifier.create(responseMono)
+                .verifyComplete();
+
+        verify(capabilityWebClient).method(HttpMethod.DELETE);
+        verify(requestBodyUriSpec).uri(ABILITY_PATH);
+        verify(requestBodySpec).bodyValue(org.mockito.ArgumentMatchers.argThat(body -> {
+            if (!(body instanceof DeleteCapabilityRequestDTO requestDTO)) {
+                return false;
+            }
+            return requestDTO.capabilityIds().equals(REQUESTED_CAPABILITY_IDS);
+        }));
+        verify(responseSpec).onStatus(any(), any());
+        verify(responseSpec).bodyToMono(String.class);
+    }
+
+    @Test
+    void debeLanzarBusinessExceptionCuandoElServicioDevuelveBadRequest() {
+        // Given
+        when(capabilityWebClient.method(HttpMethod.DELETE)).thenReturn(requestBodyUriSpec);
+        when(requestBodyUriSpec.uri(ABILITY_PATH)).thenReturn(requestBodySpec);
+        when(requestBodySpec.bodyValue(any(DeleteCapabilityRequestDTO.class))).thenReturn(requestHeadersSpec);
+        when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
+        when(responseSpec.onStatus(any(), any())).thenReturn(responseSpec);
+        when(responseSpec.bodyToMono(String.class))
+                .thenReturn(Mono.error(new BusinessException(TechnicalMessage.INVALID_PARAMETERS)));
+
+        // When
+        Mono<Void> responseMono = capabilityAdapter.deleteCapabilitiesByIds(REQUESTED_CAPABILITY_IDS, MESSAGE_ID);
+
+        // Then
+        StepVerifier.create(responseMono)
+                .expectErrorSatisfies(error -> {
+                    assertThat(error).isInstanceOf(BusinessException.class);
+                    BusinessException businessException = (BusinessException) error;
+                    assertThat(businessException.getTechnicalMessage()).isEqualTo(TechnicalMessage.INVALID_PARAMETERS);
+                })
+                .verify();
+
+        verify(capabilityWebClient).method(HttpMethod.DELETE);
+        verify(requestBodyUriSpec).uri(ABILITY_PATH);
+        verify(requestBodySpec).bodyValue(any(DeleteCapabilityRequestDTO.class));
+        verify(responseSpec).bodyToMono(String.class);
     }
 
     @Test

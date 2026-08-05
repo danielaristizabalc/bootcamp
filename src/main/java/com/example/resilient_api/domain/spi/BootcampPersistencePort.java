@@ -13,4 +13,5 @@ public interface BootcampPersistencePort {
     Mono<java.util.List<Long>> findExclusiveCapabilityIdsByBootcampId(Long bootcampId);
     Mono<Void> deleteBootcampById(Long bootcampId);
     Mono<List<BootcampBasicInfo>> findBootcampsByIds(List<Long> bootcampIds);
+    Mono<Boolean> hasSharedCapabilities(Long bootcampId);
 }

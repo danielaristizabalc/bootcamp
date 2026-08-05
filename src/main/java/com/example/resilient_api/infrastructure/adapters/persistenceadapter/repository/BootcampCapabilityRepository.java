@@ -31,4 +31,15 @@ public interface BootcampCapabilityRepository extends R2dbcRepository<BootcampCa
     Flux<Long> findAssignedCapabilityIds(@Param("capabilityIds") List<Long> capabilityIds);
 
     Mono<Void> deleteByBootcampId(Long bootcampId);
+
+    @Query("""
+        SELECT EXISTS (
+            SELECT 1 
+            FROM bootcamp_capabilities bc1
+            INNER JOIN bootcamp_capabilities bc2 ON bc1.capability_id = bc2.capability_id
+            WHERE bc1.bootcamp_id = :bootcampId 
+              AND bc2.bootcamp_id <> :bootcampId
+        )
+    """)
+    Mono<Boolean> hasSharedCapabilities(Long bootcampId);
 }

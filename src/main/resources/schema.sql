@@ -20,7 +20,6 @@ CREATE TABLE IF NOT EXISTS bootcamp_capabilities (
     bootcamp_id BIGINT NOT NULL,
     capability_id BIGINT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(bootcamp_id, capability_id),
     CONSTRAINT fk_bootcamp FOREIGN KEY (bootcamp_id) REFERENCES bootcamps(id) ON DELETE CASCADE
 );
 

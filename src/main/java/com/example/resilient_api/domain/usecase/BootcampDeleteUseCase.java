@@ -25,17 +25,25 @@ public class BootcampDeleteUseCase implements BootcampDeleteServicePort {
         return bootcampPersistencePort.existsById(bootcampId)
                 .filter(Boolean::booleanValue)
                 .switchIfEmpty(Mono.error(new BusinessException(TechnicalMessage.BOOTCAMP_NOT_FOUND)))
-            .then(Mono.defer(() -> bootcampPersistencePort.findExclusiveCapabilityIdsByBootcampId(bootcampId)))
-            .flatMap(exclusiveCapabilityIds -> deleteCapabilitiesIfNeeded(exclusiveCapabilityIds, messageId)
-                .then(Mono.defer(() -> bootcampPersistencePort.deleteBootcampById(bootcampId))))
-                .then();
+                .then(Mono.defer(() -> bootcampPersistencePort.hasSharedCapabilities(bootcampId)))
+                .flatMap(isValid -> isValid
+                        ? bootcampPersistencePort.deleteBootcampById(bootcampId)
+                        : bootcampPersistencePort.findExclusiveCapabilityIdsByBootcampId(bootcampId)
+                        .flatMap(exclusiveCapabilityIds -> deleteCapabilitiesIfNeeded(exclusiveCapabilityIds, messageId, bootcampId)
+                                .then(Mono.defer(() -> bootcampPersistencePort.deleteBootcampById(bootcampId))))
+                        .then()
+                );
+
     }
 
-    private Mono<Void> deleteCapabilitiesIfNeeded(List<Long> capabilityIds, String messageId) {
+    private Mono<Void> deleteCapabilitiesIfNeeded(List<Long> capabilityIds, String messageId, Long bootcampId) {
         if (capabilityIds == null || capabilityIds.isEmpty()) {
             return Mono.empty();
         }
 
-        return capabilityGateway.deleteCapabilitiesByIds(capabilityIds, messageId);
+        return capabilityGateway.deleteCapabilitiesByIds(capabilityIds, messageId)
+                .onErrorResume(BusinessException.class, ex -> bootcampPersistencePort.deleteBootcampById(bootcampId)
+                        .doOnNext(o -> System.out.println("Error de borrado de capacidades" + ex.getMessage()))
+                );
     }
 }
